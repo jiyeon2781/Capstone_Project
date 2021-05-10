@@ -7,7 +7,7 @@ import time
 start = time.time()
 my_path = os.path.dirname(os.path.realpath(__file__)) + '/images/pet_image/'
 print(my_path)
-info_url = requests.get("DB Information URL")
+info_url = requests.get("DB Information URL(Json format)")
 
 text = info_url.text
 data =json.loads(text)
