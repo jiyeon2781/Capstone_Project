@@ -11,8 +11,11 @@ info_url = requests.get("DB Information URL(Json format)")
 
 text = info_url.text
 data =json.loads(text)
-user = data[0]
 print(len(data))
+
+file = open('data.txt','w') #data count
+file.write(str(len(data)))
+file.close()
 
 if os.path.exists(my_path):
     shutil.rmtree("./images/pet_image")

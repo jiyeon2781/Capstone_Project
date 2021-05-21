@@ -14,15 +14,30 @@ import matplotlib.image as mpimg
 from sklearn.decomposition import PCA
 
 start = time.time()
-image_path = os.path.dirname(os.path.realpath(__file__)) + '/images/'
-print(image_path)
+
+f = open('data.txt','r')
+data_number = int(f.read())
+if data_number <= 4:
+    k_number = data_number
+    components = data_number
+elif data_number <= 17:
+    k_number = 5
+    components = data_number
+elif data_number == 0:
+    exit()
+else:
+    k_number = 5
+    components = 18
+
+
+image_path = os.path.dirname(os.path.realpath(__file__)) + '/images'
+
 img_size = 256 #input size
 model_resnet = ResNet50(weights='imagenet', include_top=False,input_shape=(img_size, img_size, 3),pooling='max')
 
 batch_size = 64
-root_dir = '/home/guest/Project/images'
 img_generator = ImageDataGenerator(preprocessing_function = preprocess_input)
-data_generator = img_generator.flow_from_directory(root_dir, target_size = (img_size,img_size), batch_size = batch_size, class_mode = None, shuffle=False)
+data_generator = img_generator.flow_from_directory(image_path, target_size = (img_size,img_size), batch_size = batch_size, class_mode = None, shuffle=False)
 
 num_images = data_generator.samples
 num_epochs = int(math.ceil(num_images / batch_size))
@@ -32,18 +47,17 @@ feature_list = model_resnet.predict_generator(data_generator, num_epochs)
 print("Num images   = ", len(data_generator.classes))
 print("Shape of feature_list = ", feature_list.shape)
 
-filenames = [root_dir + '/' + s for s in data_generator.filenames]
-pca = PCA(n_components = 18)
+filenames = [image_path + '/' + s for s in data_generator.filenames]
+pca = PCA(n_components = components)
 pca.fit(feature_list)
 compressed_features = pca.transform(feature_list)
 
-neighbors = NearestNeighbors(n_neighbors=5, algorithm='ball_tree', metric='euclidean',radius = 1.6)
+neighbors = NearestNeighbors(n_neighbors=k_number, algorithm='ball_tree', metric='euclidean',radius = 1.6)
 neighbors.fit(compressed_features)
 
-test_file = "/home/guest/Project/doll.jpg"
-
+search_file = os.path.dirname(os.path.realpath(__file__)) + '/capture_img.jpg'
 input_shape = (img_size, img_size, 3)
-img = image.load_img(test_file, target_size=(input_shape[0], input_shape[1]))
+img = image.load_img(search_file, target_size=(input_shape[0], input_shape[1]))
 img_array = image.img_to_array(img)
 expanded_img_array = np.expand_dims(img_array, axis=0)
 preprocessed_img = preprocess_input(expanded_img_array)
@@ -54,8 +68,7 @@ distance , indices = neighbors.kneighbors(image_test)
 f = open("./result.txt", 'w')
 
 def similar_images(indices):
-    plt.figure(figsize=(15,10), facecolor='white')
-    number = 1    
+    number = 1
     for index in indices:
         if number<=len(indices) :
             print(filenames[index].split("/")[6])
